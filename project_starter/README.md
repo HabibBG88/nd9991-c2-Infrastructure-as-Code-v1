@@ -27,4 +27,5 @@ See screenshot folder for the output name of instances (VPC,RT,LB) and you can f
 -S3 bucket with permission
 -EC2 InstanceTypeParameter 
 -URL to the website
+-Reduce the number of instance for cost to 2 to avoid consuming a lot of credit
 
