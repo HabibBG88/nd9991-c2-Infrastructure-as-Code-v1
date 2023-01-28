@@ -19,3 +19,12 @@ I deployed an Internet Gateway, with a default route on the public subnets, a NA
 I deploys and configures the web servers on each private subnet (min 4 and max 5)
 
 See screenshot folder for the output name of instances (VPC,RT,LB) and you can find that I added HTTP in front of the DNS name, it will also show an URL saying “Udacity Demo Web Server Up and Running!”
+
+*** url link to the website:  http://iacpr-webap-1j2f59y6ne6ba-999401657.us-east-1.elb.amazonaws.com/
+
+###added after review:
+-Bastion host
+-S3 bucket with permission
+-EC2 InstanceTypeParameter 
+-URL to the website
+
