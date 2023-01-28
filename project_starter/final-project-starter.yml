@@ -29,11 +29,17 @@ Parameters:
       Type: String
       Default: 10.0.3.0/24
   
-   
+  InstanceTypeParameter:
+        Description: AWS instance type
+        Type: String
+        Default: t3.medium
+        AllowedValues : ["t2.micro", "m1.small", "m1.large","t3.medium"]
+        Description : "Enter t2.micro, m1.small, or m1.large. Default is t3.medium."
+
 Resources:
   
-   
-    
+  
+
   VPC: 
       Type: AWS::EC2::VPC
       Properties:
@@ -245,16 +251,18 @@ Resources:
          Fn::Base64: !Sub |  
            #!/bin/bash
            apt-get update -y
+           apt-get install awscli -y
            apt-get install apache2 -y
            systemctl start apache2.service
            cd /var/www/html
-           echo "Udacity Demo Web Server Up and Running!" > index.html
+           aws s3 cp s3://habib-iac-project3/index.html .
+         
            
        ImageId: ami-0747bdcabd34c712a
-
+       IamInstanceProfile: !Ref EC2S3Profile
        SecurityGroups:
        - Ref: WebServerSecGroup
-       InstanceType: t3.medium
+       InstanceType: !Ref InstanceTypeParameter
        BlockDeviceMappings:
        - DeviceName: "/dev/sdk"
          Ebs:
@@ -282,8 +290,8 @@ Resources:
 
       LaunchConfigurationName:
         Ref: WebAppLaunchConfig
-      MinSize: '4'
-      MaxSize: '5'
+      MinSize: '2'
+      MaxSize: '2'
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
   
@@ -320,7 +328,66 @@ Resources:
         ListenerArn: !Ref 'Listener'
         Priority: 1
   
-  
+  S3Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: S3GetPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action: 's3:Get*'
+                Resource: '*'
+
+  EC2S3Profile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+        - Ref: 'S3Role'
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeSize: '10'
+      Tags:
+        - Key: Name
+          Value: !Sub ${MyEnvironment}-bastion
+      ImageId: ami-0747bdcabd34c712a
+      InstanceType: !Ref InstanceTypeParameter
+      SubnetId:
+        Ref: PublicSubnet1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      SecurityGroupIds:
+      - Ref: BastionSG
+
+  BastionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: allow ssh to Bastion Host
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+      Tags:
+      - Key: Name
+        Value: !Sub ${MyEnvironment}-bastion-sg
 
  
 
@@ -367,3 +434,9 @@ Outputs:
         Value: http://${WebAppLB.DNSName}
         Export:
             Name: !Sub "${MyEnvironment}-WEBAPP-LB-DNS"
+
+    BastionHost:
+        Description: Bastion host
+        Value: !Ref BastionHost
+        Export:
+          Name: !Sub "${MyEnvironment}-Bastion"
