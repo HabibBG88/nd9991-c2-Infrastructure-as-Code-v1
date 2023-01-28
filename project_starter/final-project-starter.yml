@@ -429,12 +429,17 @@ Outputs:
         Export:
             Name: !Sub ${MyEnvironment}-PRIV-NETS
 
-    LoadBalancer:
-        Description: DNS for the LB
-        Value: http://${WebAppLB.DNSName}
+   # LoadBalancer:
+    #    Description: DNS for the LB
+     #   Value: http://${WebAppLB.DNSName}
+      #  Export:
+       #     Name: !Sub "${MyEnvironment}-WEBAPP-LB-DNS"
+            
+    MyHttpLink:
+        Value: { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "WebAppLB", "DNSName" ] } ] ] }
         Export:
-            Name: !Sub "${MyEnvironment}-WEBAPP-LB-DNS"
-
+          Name: !Sub "${MyEnvironment}-WEBAPP-LB-DNS"
+        
     BastionHost:
         Description: Bastion host
         Value: !Ref BastionHost
